@@ -1,0 +1,19 @@
+name: sport_analysis
+channels:
+  - pytorch
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.10
+  - pip
+  - pip:
+      - streamlit>=1.32.0
+      - ultralytics>=8.3.0      # YOLOv11 + ByteTrack tracking
+      - easyocr>=1.7.1          # OCR for jersey numbers / scoreboards
+      - groq>=0.9.0             # Groq LLM API client
+      - opencv-python>=4.9.0    # Frame processing & annotation
+      - Pillow>=10.2.0          # Image handling
+      - numpy>=1.26.0           # Array operations
+      - torch>=2.2.0            # Required by Ultralytics & EasyOCR
+      - torchvision>=0.17.0     # Required by EasyOCR
+
