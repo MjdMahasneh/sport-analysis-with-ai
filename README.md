@@ -6,6 +6,12 @@ The intent is to demonstrate how several independent computer vision and AI comp
 
 ---
 
+
+
+![Image analysis screenshot](assests/screenshot.png)
+
+
+
 ## Features
 
 | Capability | Implementation |
