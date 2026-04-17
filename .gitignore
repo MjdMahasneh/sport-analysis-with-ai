@@ -8,8 +8,7 @@ __pycache__/
 dist/
 build/
 .eggs/
-__pycache__/
-.idea
+.idea/
 
 # Virtual environments
 .venv/
