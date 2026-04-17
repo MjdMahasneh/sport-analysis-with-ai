@@ -5,16 +5,22 @@ It combines pose estimation, multi-object tracking, motion trail visualisation, 
 I also include a Dockerfile for convenience and deployment if needed.
 
 
-
 The intent is to demonstrate how several independent computer vision and AI components can be composed into a cohesive, interactive tool (without custom model training).
 
 ---
 
+## Demo
+
+**Video analysis**
+
+![Video analysis screenshot](assests/rec-vid.gif)
 
 
-![Image analysis screenshot](assests/screenshot.png)
+**Image analysis**
 
+![Image analysis screenshot](assests/rec-img.gif)
 
+---
 
 ## Features
 
@@ -156,19 +162,6 @@ Then open `http://localhost:8501` in your browser.
 3. Toggle trajectory projection to display a dotted extrapolation line showing each player's predicted path based on their recent velocity.
 4. Processing runs frame-by-frame with a progress bar.
 5. The annotated H.264 output plays in-browser and is available for download.
-
----
-
-## Demo
-
-**Image analysis**
-
-![Image analysis screenshot](assests/rec-img.gif)
-
-**Video analysis**
-
-![Video analysis screenshot](assests/rec-vid.gif)
-
 
 ---
 
