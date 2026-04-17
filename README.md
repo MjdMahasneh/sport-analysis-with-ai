@@ -1,8 +1,12 @@
 # SportVision
 
-A sports analytics pipeline built as a portfolio project. It combines pose estimation, multi-object tracking, optical character recognition, and LLM-generated commentary into a single Streamlit web application.
+A sports analytics pipeline built as a portfolio project.
+It combines pose estimation, multi-object tracking, motion trail visualisation, linear trajectory projection, optical character recognition, and LLM-generated commentary into a single Streamlit web application.
+I also include a Dockerfile for convenience and deployment if needed.
 
-The intent is to demonstrate how several independent computer vision and AI components can be composed into a cohesive, interactive tool — without custom model training.
+
+
+The intent is to demonstrate how several independent computer vision and AI components can be composed into a cohesive, interactive tool (without custom model training).
 
 ---
 
@@ -14,16 +18,16 @@ The intent is to demonstrate how several independent computer vision and AI comp
 
 ## Features
 
-| Capability | Implementation |
-|---|---|
-| Person detection with 17-keypoint skeleton overlay | YOLOv11-Pose (`yolo11n-pose.pt`) |
+| Capability | Implementation                                                                                                               |
+|---|------------------------------------------------------------------------------------------------------------------------------|
+| Person detection with 17-keypoint skeleton overlay | YOLOv11-Pose (`yolo11n-pose.pt`)                                                                                             |
 | Unsupervised team separation by jersey colour | K-Means (k=2) on per-player CIE LAB features via `cv2.kmeans`; skin-tone and shadow masking; pose keypoint–guided torso crop |
-| Multi-player tracking with persistent IDs | ByteTrack, built into Ultralytics |
-| Motion trail visualisation | Rolling position history drawn per track ID |
-| Linear trajectory projection | Average-velocity extrapolation over a configurable frame window |
-| Text extraction from jerseys and scoreboards | EasyOCR |
-| Contextual sports commentary | Groq API — `llama-3.3-70b-versatile` |
-| H.264 video output for browser playback | imageio-ffmpeg |
+| Multi-player tracking with persistent IDs | ByteTrack, built into Ultralytics                                                                                            |
+| Motion trail visualisation | Rolling position history drawn per track ID                                                                                  |
+| Linear trajectory projection | Average-velocity extrapolation over a configurable frame window                                                              |
+| Text extraction from jerseys and scoreboards | EasyOCR                                                                                                                      |
+| Contextual sports commentary | Groq API (`llama-3.3-70b-versatile`)                                                                                         |
+| H.264 video output for browser playback | imageio-ffmpeg                                                                                                               |
 
 All configuration (model names, thresholds, visual parameters) lives in a single `config.py` file.
 
@@ -31,9 +35,9 @@ All configuration (model names, thresholds, visual parameters) lives in a single
 
 ## How It Works
 
-**Image pipeline.** When a user uploads an image, `yolo11n-pose.pt` runs a single forward pass that simultaneously produces bounding boxes and 17 COCO keypoints per person. Ultralytics renders the skeleton overlay automatically. Immediately after, the jersey region of each bounding box is cropped — using shoulder/hip keypoints to define the exact torso boundary when those landmarks are confident enough, falling back to a fixed-fraction window otherwise. The crop is resized to 32×32 and skin-tone pixels (via an HSV range mask) and near-black shadow pixels are excluded before a K-Means (k=1) pass in CIE LAB space extracts the dominant jersey colour. A second K-Means pass (k=2) in LAB space across all players splits them into two teams, with labels normalised by perceptual lightness (LAB L\*) for consistency. EasyOCR then scans the original image for legible text. Finally, the detection summary and OCR results are forwarded to the Groq API to produce a short commentary string.
+**Image pipeline.** When a user uploads an image, `yolo11n-pose.pt` runs a single forward pass that simultaneously produces bounding boxes and 17 COCO keypoints per person. Ultralytics renders the skeleton overlay automatically. Immediately after, the jersey region of each bounding box is cropped (using shoulder/hip keypoints to define the exact torso boundary when those landmarks are confident enough, falling back to a fixed-fraction window otherwise). The crop is resized to 32x32 and skin-tone pixels (via an HSV range mask) and near-black shadow pixels are excluded before a K-Means (k=1) pass in CIE LAB space extracts the dominant jersey colour. A second K-Means pass (k=2) in LAB space across all players splits them into two teams, with labels normalised by perceptual lightness (LAB L\*) for consistency. EasyOCR then scans the original image for legible text. Finally, the detection summary and OCR results are forwarded to the Groq API to produce a short commentary string.
 
-**Video pipeline.** Each frame is passed to `yolo11n-pose.pt` via Ultralytics' `model.track()` with ByteTrack enabled (`persist=True`). This gives every detected player a consistent numeric ID across frames. A `TeamTracker` class accumulates a rolling 15-frame colour history per track ID — extracting jersey colours with the same LAB + skin-masking + keypoint-crop pipeline used for images — and re-clusters using K-Means (k=2) in LAB space to keep team assignments stable against frame-to-frame colour variation. Motion trails are drawn as fading polylines using the position history deque; trajectory projections are linear extrapolations of the average velocity over the last 6 positions. Output is encoded to H.264 via imageio-ffmpeg.
+**Video pipeline.** Each frame is passed to `yolo11n-pose.pt` via Ultralytics' `model.track()` with ByteTrack enabled (`persist=True`). This gives every detected player a consistent numeric ID across frames. A `TeamTracker` class accumulates a rolling 15-frame colour history per track ID (extracting jersey colours with the same LAB + skin-masking + keypoint-crop pipeline used for images) and re-clusters using K-Means (k=2) in LAB space to keep team assignments stable against frame-to-frame colour variation. Each player's bounding-box centre is appended to a fixed-length deque every frame; these positions are rendered as fading polylines (motion trails) that visually encode recent movement direction and speed. On top of that, the average velocity over the last `TRAJECTORY_N_FRAMES` positions is extrapolated forward as a dotted line (trajectory projection), giving a short-term prediction of where each player is headed. Output is encoded to H.264 via imageio-ffmpeg.
 
 ---
 
@@ -42,12 +46,14 @@ All configuration (model names, thresholds, visual parameters) lives in a single
 ```
 sportvision/
 ├── app.py            # Streamlit entry point
-├── config.py         # All tuneable constants — edit here, nowhere else
+├── config.py         # All tuneable constants
 ├── detector.py       # YOLOv11-Pose, team clustering, ByteTrack video tracking
 ├── ocr_reader.py     # EasyOCR wrapper
 ├── commentary.py     # Groq API wrapper
 ├── utils.py          # OpenCV drawing helpers (trails, trajectory, team overlay)
 ├── launch.py         # Windows launcher (patches Python 3.10 mimetypes bug)
+├── Dockerfile        # Container definition for one-command deployment
+├── .gitignore
 ├── requirements.txt  # pip dependencies
 ├── environment.yml   # Conda environment definition
 └── README.md
@@ -56,6 +62,8 @@ sportvision/
 ---
 
 ## Setup
+
+The app can be run locally via Conda (recommended for development) or inside Docker.
 
 **1. Clone**
 
@@ -76,10 +84,10 @@ conda activate sport_analysis
 Obtain a free key at [console.groq.com](https://console.groq.com).
 
 ```powershell
-# Windows PowerShell — current session only
+# Windows PowerShell (current session only)
 $env:GROQ_API_KEY = "your_key_here"
 
-# Windows — persistent across sessions
+# Windows (persistent across sessions)
 setx GROQ_API_KEY "your_key_here" (or set GROQ_API_KEY "your_key_here" for current user only)
 ```
 
@@ -107,21 +115,47 @@ Open `http://localhost:8501` in your browser.
 
 ---
 
+## Docker
+
+**Build the image**
+
+```bash
+docker build -t sportvision .
+```
+
+**Run the container**
+
+Pass your Groq API key as an environment variable and map port 8501:
+
+```bash
+docker run -e GROQ_API_KEY=your_key_here -p 8501:8501 sportvision
+```
+
+Then open `http://localhost:8501` in your browser.
+
+> YOLO model weights (`yolo11n-pose.pt`) are downloaded automatically by Ultralytics on first run inside the container. To avoid re-downloading on every run, mount a local weights directory:
+> ```bash
+> docker run -e GROQ_API_KEY=your_key_here -p 8501:8501 -v "%cd%":/app sportvision
+> ```
+
+---
+
 ## Usage
 
 **Image tab**
 
 1. Upload a JPG, PNG, or WEBP image containing players.
-2. The app runs pose estimation and team clustering automatically — no configuration needed.
+2. The app runs pose estimation and team clustering automatically (no configuration needed).
 3. Scroll down to view the keypoint detail table, team breakdown, and OCR results.
 4. Click "Generate Commentary" to call the Groq API.
 
 **Video tab**
 
 1. Upload an MP4, AVI, or MOV clip. Clips under 30 seconds are recommended for quick iteration.
-2. Optionally toggle motion trails and trajectory projection, or adjust trail length.
-3. Processing runs frame-by-frame with a progress bar.
-4. The annotated H.264 output plays in-browser and is available for download.
+2. Toggle motion trails on or off and adjust the trail length to control how much movement history is shown per player.
+3. Toggle trajectory projection to display a dotted extrapolation line showing each player's predicted path based on their recent velocity.
+4. Processing runs frame-by-frame with a progress bar.
+5. The annotated H.264 output plays in-browser and is available for download.
 
 ---
 
@@ -135,7 +169,6 @@ Open `http://localhost:8501` in your browser.
 
 ![Video analysis screenshot](assests/rec-vid.gif)
 
-> Screenshots to be added. Create a `docs/` folder and drop images there.
 
 ---
 
@@ -146,22 +179,27 @@ Input (image or video)
         |
         v
   detector.py
-    yolo11n-pose.pt  →  bounding boxes + 17-keypoint skeletons
-    K-Means (k=2)    →  jersey colour clustering → Team A / Team B
-    ByteTrack        →  persistent player IDs across video frames
-    utils.py         →  trail history, trajectory projection, team overlay
+    yolo11n-pose.pt  ->  bounding boxes + 17-keypoint skeletons
+    K-Means (k=2)    ->  jersey colour clustering -> Team A / Team B
+    ByteTrack        ->  persistent player IDs across video frames
+        |
+        v
+  utils.py
+    motion trails    ->  fading polylines from per-player position history
+    trajectory proj  ->  average-velocity extrapolation -> predicted path
+    team overlay     ->  colour-coded bounding boxes and labels
         |
         v
   ocr_reader.py
-    EasyOCR          →  jersey numbers, scoreboard text
+    EasyOCR          ->  jersey numbers, scoreboard text
         |
         v
   commentary.py
-    Groq API         →  llama-3.3-70b-versatile → commentary string
+    Groq API         ->  llama-3.3-70b-versatile -> commentary string
         |
         v
   app.py
-    Streamlit        →  renders annotated frames, tables, and commentary
+    Streamlit        ->  renders annotated frames, tables, and commentary
 ```
 
 ---
@@ -170,16 +208,16 @@ Input (image or video)
 
 All constants are defined in `config.py`. The most commonly adjusted values are:
 
-| Constant | Default | Purpose |
-|---|---|---|
-| `POSE_MODEL` | `yolo11n-pose.pt` | Swap for a larger model (e.g. `yolo11s-pose.pt`) for better accuracy |
+| Constant | Default | Purpose                                                                     |
+|---|---|-----------------------------------------------------------------------------|
+| `POSE_MODEL` | `yolo11n-pose.pt` | Swap for a larger model (e.g. `yolo11s-pose.pt`) for better accuracy        |
 | `DEFAULT_CONF` | `0.25` | Lower to detect partially occluded players; raise to reduce false positives |
-| `DEFAULT_TRAIL_LEN` | `40` | Longer trails give more movement history; shorter is less cluttered |
-| `TRAJECTORY_N_FRAMES` | `20` | Frames ahead to project; reduce for fast-moving scenes |
-| `GROQ_MODEL` | `llama-3.3-70b-versatile` | Any Groq-supported chat model |
-| `JERSEY_RESIZE` | `32` | Jersey crop resize (N×N) before K-Means — larger = more stable colour |
-| `JERSEY_KP_CONF` | `0.4` | Min shoulder/hip keypoint confidence to use pose-guided torso crop |
-| `JERSEY_DARK_V_MAX` | `30` | HSV V threshold below which pixels are treated as shadow/background |
+| `DEFAULT_TRAIL_LEN` | `40` | Longer trails give more movement history; shorter is less cluttered         |
+| `TRAJECTORY_N_FRAMES` | `20` | Frames ahead to project; reduce for fast-moving scenes                      |
+| `GROQ_MODEL` | `llama-3.3-70b-versatile` | Any Groq-supported chat model                                               |
+| `JERSEY_RESIZE` | `32` | Jersey crop resize (N×N) before K-Means (larger = more stable colour)       |
+| `JERSEY_KP_CONF` | `0.4` | Min shoulder/hip keypoint confidence to use pose-guided torso crop          |
+| `JERSEY_DARK_V_MAX` | `30` | HSV V threshold below which pixels are treated as shadow/background         |
 
 ---
 
@@ -189,12 +227,15 @@ All constants are defined in `config.py`. The most commonly adjusted values are:
 |---|---|
 | UI | Streamlit |
 | Pose estimation and detection | Ultralytics YOLOv11 (`yolo11n-pose.pt`) |
-| Team clustering | OpenCV `cv2.kmeans` in CIE LAB space; HSV skin-tone masking; pose keypoint–guided crop |
+| Team clustering | OpenCV `cv2.kmeans` in CIE LAB space; HSV skin-tone masking; pose keypoint-guided crop |
 | Multi-object tracking | ByteTrack via Ultralytics |
+| Motion trails | Per-player position deque rendered as fading polylines via OpenCV |
+| Trajectory projection | Average-velocity extrapolation over a configurable frame window via OpenCV |
 | Visual overlays | OpenCV |
 | Text recognition | EasyOCR |
 | LLM commentary | Groq API (`llama-3.3-70b-versatile`) |
 | Video encoding | imageio-ffmpeg (libx264 H.264) |
+| Containerisation | Docker (python:3.10-slim + ffmpeg + libgl1) |
 | Runtime | Python 3.10, PyTorch |
 
 ---

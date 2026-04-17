@@ -1,0 +1,62 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+env/
+.env
+
+# Conda
+*.conda
+envs/
+
+# Environment variables
+.env
+.env.local
+
+# YOLO / model weights (large binaries — download on first run)
+*.pt
+*.onnx
+*.torchscript
+
+# EasyOCR model cache
+~/.EasyOCR/
+
+# Streamlit
+.streamlit/secrets.toml
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Uploaded / processed media (keep samples/ tracked but ignore temp outputs)
+*.mp4
+*.avi
+*.mov
+!samples/*.mp4
+!samples/*.avi
+!samples/*.mov
+
+# Logs
+*.log
+
