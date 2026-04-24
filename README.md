@@ -9,8 +9,16 @@ The intent is to demonstrate how several independent computer vision and AI comp
 
 ---
 
-## todo:
-- [] 
+### TODO (+ other ideas to expermint with):
+- [ ] Voice commentary - add TTS (text to speech) for generated commentary
+- [ ] Motion and trajectory - improve velocity smoothing and occlusion handling
+- [ ] Speed estimation - compute pixel speed, requires calibration or homography (or initially speed in pixels/s)
+- [ ] Ball tracking - detect and track ball for context-aware analysis.
+- [ ] Event detection - goals, passes, shots using simple heuristics or rules
+- [ ] Camera motion compensation - stabilise trajectories under panning
+- [ ] Team ID stabilisation - reduce flicker across frames
+- [ ] Player re-ID - improve ID consistency after occlusion (appearance embeddings)
+
 
 ## Demo
 
