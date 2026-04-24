@@ -9,6 +9,9 @@ The intent is to demonstrate how several independent computer vision and AI comp
 
 ---
 
+## todo:
+- [] 
+
 ## Demo
 
 **Video analysis**
